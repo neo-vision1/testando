@@ -74,9 +74,18 @@ export default function App() {
       {/* HEADER */}
       <header className="flex flex-col md:flex-row items-center justify-between px-6 py-4 bg-slate-900 border-b border-slate-800 z-20 shadow-md gap-4">
         <div className="flex items-center gap-4">
-           <div className="w-10 h-10 rounded bg-blue-900/50 border border-blue-800 flex items-center justify-center">
-             <span className="text-xl">🚁</span>
-           </div>
+           {/* LOGO IMAGE */}
+           <img 
+             src="/logo.png" 
+             alt="NEO" 
+             className="h-12 w-auto object-contain"
+             onError={(e) => {
+               // Fallback silencioso se a imagem não existir na pasta public
+               // Para ver a imagem, salve seu arquivo como 'logo.png' na pasta public
+               e.currentTarget.style.display = 'none';
+             }}
+           />
+           
            <div>
              <h1 className="text-lg font-bold text-white leading-tight">Central de Comando</h1>
              <div className="flex items-center gap-2 text-xs text-slate-400">

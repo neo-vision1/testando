@@ -1,17 +1,17 @@
 import React from 'react';
 
+// Fix: Add explicit type definition for the custom element 'mux-player'
 declare global {
   namespace JSX {
     interface IntrinsicElements {
       'mux-player': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-        'playback-id': string;
-        'stream-type': string;
+        'playback-id'?: string;
+        'stream-type'?: string;
         'primary-color'?: string;
         'secondary-color'?: string;
         controls?: boolean;
         autoplay?: boolean;
         muted?: boolean;
-        className?: string;
       };
     }
   }
