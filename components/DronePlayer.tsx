@@ -26,7 +26,15 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
   return (
     <div className="relative w-full h-full bg-black group">
       {/* Overlay Info */}
-      <div className="absolute top-2 left-2 z-10 bg-black/60 backdrop-blur-sm text-green-400 px-2 py-1 rounded text-[10px] font-mono border border-green-900/50 flex items-center gap-2">
+      {/* Logo in Top-Left Corner */}
+      <img 
+        src="/neo_logo.png" 
+        alt="NeO Logo" 
+        className="absolute top-2 left-2 z-20 h-8" // Tamanho ajustado para 8 unidades de altura
+      />
+      
+      {/* Overlay Info (Moved to Top-Right) */}
+      <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-sm text-green-400 px-2 py-1 rounded text-[10px] font-mono border border-green-900/50 flex items-center gap-2">
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
           <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
