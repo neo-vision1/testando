@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Drone Command Center DVR",
+  "description": "A professional drone surveillance dashboard featuring live streaming with DVR capabilities (rewind/seek) using Mux Player and Tailwind CSS.",
+  "requestFramePermissions": []
+}
