@@ -59,17 +59,17 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
 
         // 2. Desenha as caixas no canvas
         // Garante que o canvas tenha o mesmo tamanho do vídeo
-        if (canvas.width !== videoElement.videoWidth || canvas.height !== videoElement.videoHeight) {
-          canvas.width = videoElement.videoWidth;
-          canvas.height = videoElement.videoHeight;
+        if (canvas!.width !== videoElement.videoWidth || canvas!.height !== videoElement.videoHeight) {
+          canvas!.width = videoElement.videoWidth;
+          canvas!.height = videoElement.videoHeight;
         }
         
         // A função drawBoxes já usa as detecções do hook, mas vamos garantir que o desenho ocorra
         // após a atualização do estado `detections`
-        drawBoxes(ctx, detections);
-      } else if (!isDetectionActive && ctx) {
+        drawBoxes(ctx!, detections);
+      } else if (!isDetectionActive && canvas && ctx) {
         // Limpa o canvas quando a detecção é desativada
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
 
       animationFrameId = requestAnimationFrame(detectAndDraw);
