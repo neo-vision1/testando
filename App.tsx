@@ -76,13 +76,19 @@ export default function App() {
         <div className="flex items-center gap-4">
            {/* LOGO IMAGE */}
            <img 
-             src="/logo.png" 
+             src="/logo.svg" 
              alt="NEO" 
-             className="h-12 w-auto object-contain"
+             className="h-10 w-auto object-contain"
              onError={(e) => {
-               // Fallback silencioso se a imagem não existir na pasta public
-               // Para ver a imagem, salve seu arquivo como 'logo.png' na pasta public
+               // Fallback: mostra texto se o SVG falhar por algum motivo
                e.currentTarget.style.display = 'none';
+               const parent = e.currentTarget.parentElement;
+               if (parent) {
+                  const fallback = document.createElement('span');
+                  fallback.textContent = 'NEO';
+                  fallback.className = 'text-2xl font-black tracking-tighter text-white mr-2';
+                  parent.insertBefore(fallback, parent.firstChild);
+               }
              }}
            />
            

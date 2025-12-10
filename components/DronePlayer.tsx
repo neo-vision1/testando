@@ -40,6 +40,7 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
         Mux Player Setup 
         stream-type="live:dvr" is CRITICAL for the timeline/seek bar 
       */}
+      {/* @ts-ignore */}
       <mux-player
         playback-id={playbackId}
         stream-type="live:dvr"

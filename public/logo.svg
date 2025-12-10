@@ -1,0 +1,9 @@
+<svg width="100" height="40" viewBox="0 0 100 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <!-- N -->
+  <path d="M10 32V8L28 32V8" stroke="#e2e8f0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- E -->
+  <path d="M42 8H60M42 20H56M42 32H60M42 8V32" stroke="#e2e8f0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- O -->
+  <circle cx="82" cy="20" r="12" stroke="#e2e8f0" stroke-width="4"/>
+</svg>
