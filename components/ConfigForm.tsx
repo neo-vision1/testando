@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { AllConfigs, DroneDefinition } from '../types';
-import { RTMP_BASE_URL } from '../constants';
 import CopyButton from './CopyButton';
 
 interface ConfigFormProps {
@@ -23,8 +22,6 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ drone, config, isExpanded, onTo
     setTempPlaybackId(currentConfig.playbackId);
     setTempRtmpKey(currentConfig.rtmpKey);
   }, [currentConfig]);
-
-  const fullRtmpUrl = RTMP_BASE_URL + tempRtmpKey;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,22 +71,11 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ drone, config, isExpanded, onTo
               </div>
             </div>
 
-            {/* RTMP URL Readonly */}
-            <div>
-              <label className="block text-xs uppercase text-slate-400 font-bold mb-1 ml-1">URL RTMP do Servidor</label>
-              <div className="flex rounded-md shadow-sm overflow-hidden border border-slate-700 bg-black">
-                <div className="flex-1 px-3 py-2 text-xs font-mono text-yellow-500 truncate select-all">
-                  {fullRtmpUrl}
-                </div>
-                <CopyButton textToCopy={fullRtmpUrl} label="URL" />
-              </div>
-            </div>
-
             <div className="w-full h-px bg-slate-800 my-2"></div>
 
             {/* Playback ID Input */}
             <div>
-              <label className="block text-xs uppercase text-slate-400 font-bold mb-1 ml-1">ID de Reprodução (Mux)</label>
+              <label className="block text-xs uppercase text-slate-400 font-bold mb-1 ml-1">ID de Reprodução</label>
               <div className="flex rounded-md shadow-sm overflow-hidden border border-slate-700 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
                 <input
                   type="text"

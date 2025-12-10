@@ -3,7 +3,7 @@ import React from 'react';
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      'mux-player': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
+      'mux-player': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
         'playback-id': string;
         'stream-type': string;
         'primary-color'?: string;
@@ -12,7 +12,7 @@ declare global {
         autoplay?: boolean;
         muted?: boolean;
         className?: string;
-      }, HTMLElement>;
+      };
     }
   }
 }
