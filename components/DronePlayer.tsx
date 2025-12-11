@@ -165,7 +165,7 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
   }, [isAiActive, model, detectFrame]);
 
   return (
-    <div className="relative w-full h-full bg-black group overflow-hidden rounded-lg touch-none">
+    <div className="relative w-full h-full bg-black group overflow-hidden rounded-lg touch-none flex items-center justify-center">
       
       {/* Canvas Layer */}
       <canvas
@@ -227,6 +227,7 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
       {/* 
         Mux Player Setup 
         @ts-ignore para evitar erros de tipagem com Web Component
+        Removido style={{aspectRatio: 16/9}} para evitar overflow em containers flex/grid
       */}
       {/* @ts-ignore */}
       <mux-player
@@ -240,8 +241,7 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
         muted
         plays-inline /* ESSENCIAL PARA IOS/MOBILE */
         crossOrigin="anonymous" 
-        className="w-full h-full object-contain bg-black"
-        style={{ aspectRatio: '16/9' }}
+        className="w-full h-full max-w-full max-h-full object-contain bg-black"
       />
     </div>
   );

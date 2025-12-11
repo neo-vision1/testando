@@ -191,10 +191,10 @@ export default function App() {
         <main className="flex-1 p-2 md:p-4 overflow-y-auto bg-black">
           
           <div className={`
-            grid gap-2 md:gap-4 w-full h-full max-w-7xl mx-auto transition-all duration-500 content-start
+            grid gap-2 md:gap-4 w-full h-full max-w-7xl mx-auto transition-all duration-500
             ${viewMode === 'multi' 
-              ? 'grid-cols-1 md:grid-cols-2 lg:grid-rows-1' 
-              : 'grid-cols-1 grid-rows-1'}
+              ? 'grid-rows-2 grid-cols-1 md:grid-cols-2 md:grid-rows-1' 
+              : 'grid-rows-1 grid-cols-1'}
           `}>
             {feedsToDisplay.length > 0 ? (
               feedsToDisplay.map(drone => (
