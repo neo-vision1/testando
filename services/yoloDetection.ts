@@ -78,17 +78,21 @@ export function preprocess(videoElement: HTMLVideoElement | HTMLCanvasElement): 
  */
 export function postprocess(output: ort.Tensor, originalWidth: number, originalHeight: number): Detection[] {
   const outputData = output.data as Float32Array;
-  const [numClasses, numBoxes] = [COCO_CLASSES.length, outputData.length / (COCO_CLASSES.length + 4)];
+  // O formato de saída do YOLOv8n é [1, 84, 8400] (80 classes + 4 caixas)
+  const numClasses = COCO_CLASSES.length;
+  const numBoxes = output.dims[2]; // 8400
   const detections: Detection[] = [];
 
-  // Transpõe a saída de [84, 8400] para [8400, 84] para facilitar a iteração
+  // A saída é [cx, cy, w, h, class_scores...]
+  // O tensor está achatado em [84 * 8400]
   for (let i = 0; i < numBoxes; i++) {
     let maxScore = -1;
     let maxClassId = -1;
 
     // Encontra a classe com a maior pontuação
     for (let j = 0; j < numClasses; j++) {
-      const score = outputData[4 + j * numBoxes + i]; // Score da classe j para a caixa i
+      // O índice é: (4 + j) * numBoxes + i
+      const score = outputData[(4 + j) * numBoxes + i];
       if (score > maxScore) {
         maxScore = score;
         maxClassId = j;
