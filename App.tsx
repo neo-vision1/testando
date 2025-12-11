@@ -22,7 +22,6 @@ export default function App() {
   const [expandedConfig, setExpandedConfig] = useState<string | null>('drone1');
 
   // --- THEME MANAGEMENT ---
-  // Aplica a classe 'dark' no elemento HTML root baseado na config
   useEffect(() => {
     if (config.theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -33,17 +32,21 @@ export default function App() {
 
   // Load initial session and user config
   useEffect(() => {
-    const sessionUser = loadSession();
-    if (sessionUser) {
-      setUser(sessionUser);
-      const userConfig = loadUserConfig(sessionUser.id);
-      setConfig(userConfig);
+    const init = async () => {
+        const sessionUser = loadSession();
+        if (sessionUser) {
+            setUser(sessionUser);
+            // Agora é async
+            const userConfig = await loadUserConfig(sessionUser.id);
+            setConfig(userConfig);
+        }
     }
+    init();
   }, []);
 
-  const handleLoginSuccess = (loggedInUser: StoredUser) => {
+  const handleLoginSuccess = async (loggedInUser: StoredUser) => {
     setUser(loggedInUser);
-    const userConfig = loadUserConfig(loggedInUser.id);
+    const userConfig = await loadUserConfig(loggedInUser.id);
     setConfig(userConfig);
   };
 
@@ -52,31 +55,27 @@ export default function App() {
     clearSession();
   };
 
-  const handleSaveConfig = useCallback((key: keyof AllConfigs, playbackId: string, rtmpKey: string) => {
+  const handleSaveConfig = useCallback(async (key: keyof AllConfigs, playbackId: string, rtmpKey: string) => {
     if (!user) return;
 
-    setConfig(prev => {
-      // TypeScript safety: Ensure we are constructing a valid AllConfigs object
-      // We manually construct the object to satisfy the type checker for the specific keys
-      const updated = { ...prev };
-      
-      if (key === 'drone1' || key === 'drone2') {
+    // Atualização otimista da UI
+    const updated = { ...config };
+    if (key === 'drone1' || key === 'drone2') {
          updated[key] = { playbackId: playbackId.trim(), rtmpKey: rtmpKey.trim() };
-      }
-
-      saveUserConfig(user.id, updated);
-      return updated;
-    });
+    }
+    setConfig(updated);
     setExpandedConfig(null);
-  }, [user]);
 
-  const toggleTheme = (newTheme: 'light' | 'dark') => {
+    // Persistência Async
+    await saveUserConfig(user.id, updated);
+  }, [user, config]);
+
+  const toggleTheme = async (newTheme: 'light' | 'dark') => {
     if (!user) return;
-    setConfig(prev => {
-      const updated = { ...prev, theme: newTheme };
-      saveUserConfig(user.id, updated);
-      return updated;
-    });
+    
+    const updated = { ...config, theme: newTheme };
+    setConfig(updated); // UI Update
+    await saveUserConfig(user.id, updated); // Storage Update
   };
 
   // Compute active feeds
@@ -247,8 +246,8 @@ export default function App() {
               ))}
             </div>
 
-            <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/50 rounded text-xs text-yellow-700 dark:text-yellow-500">
-               <strong>Atenção:</strong> Os dados são salvos localmente neste navegador. Para acessar em outro dispositivo, você precisará reconfigurar suas chaves.
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/50 rounded text-xs text-blue-700 dark:text-blue-400">
+               <strong>Status:</strong> {localStorage.getItem('drone_cloud_config_v1') ? 'Nuvem Conectada' : 'Apenas Local'}
             </div>
           </div>
         </div>

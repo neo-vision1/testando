@@ -14,6 +14,12 @@ export interface StoredUser {
   id: string;
 }
 
+export interface CloudConfig {
+  githubToken: string;
+  gistId: string | null;
+  lastSync: number;
+}
+
 export type ViewMode = 'alpha' | 'bravo' | 'multi';
 
 export interface DroneDefinition {

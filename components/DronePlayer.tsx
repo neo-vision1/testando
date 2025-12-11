@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ScanEye, Loader2, AlertTriangle } from 'lucide-react';
+import { ScanEye, Loader2, AlertTriangle, Hd } from 'lucide-react';
 
 // Import TensorFlow.js and the pre-trained model
 import '@tensorflow/tfjs';
@@ -21,7 +21,6 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const requestRef = useRef<number>(0);
   
-  // Ref para controlar a taxa de frames (Performance Mobile)
   const lastDetectTimeRef = useRef<number>(0);
 
   // 1. Load the Pre-trained Model (COCO-SSD)
@@ -29,17 +28,13 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
     try {
       setIsModelLoading(true);
       setErrorMsg(null);
-      console.log("Carregando modelo de detecção...");
       
-      // Load the model from Google's CDN
-      // lite_mobilenet_v2 é essencial para performance mobile
       const loadedModel = await cocoSsd.load({
         base: 'lite_mobilenet_v2' 
       });
       
       setModel(loadedModel);
       setIsModelLoading(false);
-      console.log("Modelo carregado com sucesso!");
     } catch (err) {
       console.error("Erro ao carregar modelo:", err);
       setErrorMsg("Falha ao carregar IA");
@@ -48,7 +43,6 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
     }
   };
 
-  // Toggle AI Handler
   const toggleAi = () => {
     if (!isAiActive && !model) {
       loadModel();
@@ -56,12 +50,9 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
     setIsAiActive(!isAiActive);
   };
 
-  // 2. Detection Loop
   const detectFrame = useCallback(async () => {
     if (!model || !muxPlayerRef.current || !canvasRef.current || !isAiActive) return;
 
-    // PERFORMANCE: Limitador de FPS para Mobile
-    // Não tenta detectar em todos os frames (60fps), limita a cada ~100ms (10fps)
     const now = Date.now();
     if (now - lastDetectTimeRef.current < 100) {
       requestRef.current = requestAnimationFrame(detectFrame);
@@ -69,22 +60,17 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
     }
     lastDetectTimeRef.current = now;
 
-    // A. Acessar o elemento <video> nativo dentro do Shadow DOM do Mux Player
     const videoElement = muxPlayerRef.current.shadowRoot?.querySelector('video');
 
-    // Se o vídeo não estiver pronto ou reproduzindo
     if (!videoElement || videoElement.readyState < 3) { 
       requestRef.current = requestAnimationFrame(detectFrame);
       return;
     }
 
-    // B. Preparar o Canvas
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Sincronizar tamanho do canvas com o vídeo visualizado (clientWidth/clientHeight)
-    // Usar clientWidth é melhor que videoWidth para garantir alinhamento visual no responsivo
     const displayWidth = videoElement.clientWidth || videoElement.videoWidth;
     const displayHeight = videoElement.clientHeight || videoElement.videoHeight;
 
@@ -93,23 +79,17 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
       canvas.height = displayHeight;
     }
     
-    // Limpar canvas anterior
     ctx.clearRect(0, 0, displayWidth, displayHeight);
 
     try {
-      // C. Realizar a Detecção (Inference)
       const predictions = await model.detect(videoElement);
 
-      // Fatores de escala (caso o vídeo renderizado seja diferente do tamanho nativo do vídeo)
       const scaleX = displayWidth / videoElement.videoWidth;
       const scaleY = displayHeight / videoElement.videoHeight;
 
-      // D. Desenhar Resultados
       predictions.forEach((prediction) => {
-        // Filtrar confiança baixa
         if (prediction.score < 0.5) return;
 
-        // Aplicar escala nas coordenadas
         const x = prediction.bbox[0] * scaleX;
         const y = prediction.bbox[1] * scaleY;
         const width = prediction.bbox[2] * scaleX;
@@ -118,22 +98,18 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
         const text = prediction.class.toUpperCase();
         const score = Math.round(prediction.score * 100) + '%';
 
-        // Definir cores baseadas na classe
-        let strokeColor = '#00FF00'; // Default Green
-        if (text === 'PERSON') strokeColor = '#FF0000'; // Red for people
-        if (text === 'CAR' || text === 'TRUCK' || text === 'BUS') strokeColor = '#FFFF00'; // Yellow for vehicles
+        let strokeColor = '#00FF00'; 
+        if (text === 'PERSON') strokeColor = '#FF0000'; 
+        if (text === 'CAR' || text === 'TRUCK' || text === 'BUS') strokeColor = '#FFFF00'; 
 
-        // Draw Box
         ctx.strokeStyle = strokeColor;
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, width, height);
 
-        // Draw Label Background
         ctx.fillStyle = strokeColor;
         const textWidth = ctx.measureText(text + ' ' + score).width;
         ctx.fillRect(x, y > 20 ? y - 20 : y, textWidth + 10, 20);
 
-        // Draw Text
         ctx.fillStyle = '#000000';
         ctx.font = 'bold 12px monospace';
         ctx.fillText(`${text} ${score}`, x + 5, y > 20 ? y - 5 : y + 15);
@@ -143,17 +119,14 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
       // Ignorar erros momentâneos
     }
 
-    // Loop
     requestRef.current = requestAnimationFrame(detectFrame);
   }, [model, isAiActive]);
 
-  // Start/Stop Loop Effect
   useEffect(() => {
     if (isAiActive && model) {
       requestRef.current = requestAnimationFrame(detectFrame);
     } else {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
-      // Limpar canvas ao desligar
       if (canvasRef.current) {
         const ctx = canvasRef.current.getContext('2d');
         ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
@@ -174,26 +147,33 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
       />
 
       {/* Overlay Info Superior */}
-      <div className="absolute top-2 left-2 z-30 flex items-center gap-2 max-w-[80%]">
-        <div className="bg-black/60 backdrop-blur-sm text-green-400 px-2 py-1 rounded text-[10px] font-mono border border-green-900/50 flex items-center gap-2 shadow-sm whitespace-nowrap overflow-hidden text-ellipsis">
-          <span className="relative flex h-2 w-2 min-w-[8px]">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-          </span>
-          <span className="hidden sm:inline">LIVE DVR |</span>
-          <span className="text-slate-300">{playbackId.substring(0, 8)}...</span>
+      <div className="absolute top-2 left-2 z-30 flex flex-col gap-1 max-w-[80%]">
+        <div className="flex items-center gap-2">
+            <div className="bg-black/60 backdrop-blur-sm text-green-400 px-2 py-1 rounded text-[10px] font-mono border border-green-900/50 flex items-center gap-2 shadow-sm whitespace-nowrap overflow-hidden text-ellipsis">
+            <span className="relative flex h-2 w-2 min-w-[8px]">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            <span className="hidden sm:inline">LIVE DVR |</span>
+            <span className="text-slate-300">{playbackId.substring(0, 8)}...</span>
+            </div>
+
+            {/* Quality Indicator */}
+            <div className="bg-blue-900/60 backdrop-blur-sm text-blue-200 px-2 py-1 rounded text-[10px] font-mono border border-blue-800/50 flex items-center gap-1 shadow-sm">
+                <Hd className="w-3 h-3" />
+                <span className="font-bold">1080p</span>
+            </div>
         </div>
 
         {/* AI Status Badge */}
         {isAiActive && (
-          <div className="bg-red-950/80 backdrop-blur-sm text-red-400 px-2 py-1 rounded text-[10px] font-mono border border-red-900/50 flex items-center gap-2 animate-pulse whitespace-nowrap">
+          <div className="bg-red-950/80 backdrop-blur-sm text-red-400 px-2 py-1 rounded text-[10px] font-mono border border-red-900/50 flex items-center gap-2 animate-pulse whitespace-nowrap w-fit">
             <ScanEye className="w-3 h-3" />
             <span className="hidden sm:inline">AI DETECT:</span> {model ? 'ON' : 'LOAD'}
           </div>
         )}
       </div>
 
-      {/* Botão SV (Smart Vision) - Aumentado para toque no mobile */}
       <button
         onClick={toggleAi}
         disabled={isModelLoading}
@@ -216,7 +196,6 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
         <span className="sm:hidden">{isModelLoading ? '...' : 'SV'}</span>
       </button>
 
-      {/* Mensagem de Erro IA */}
       {errorMsg && (
         <div className="absolute top-12 right-2 z-30 bg-red-900/90 text-white text-[10px] px-2 py-1 rounded border border-red-500 flex items-center gap-1">
           <AlertTriangle className="w-3 h-3" />
@@ -224,11 +203,6 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
         </div>
       )}
       
-      {/* 
-        Mux Player Setup 
-        @ts-ignore para evitar erros de tipagem com Web Component
-        Removido style={{aspectRatio: 16/9}} para evitar overflow em containers flex/grid
-      */}
       {/* @ts-ignore */}
       <mux-player
         ref={muxPlayerRef}
@@ -239,9 +213,11 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
         controls
         autoplay
         muted
-        plays-inline /* ESSENCIAL PARA IOS/MOBILE */
+        plays-inline
+        max-resolution="1080p" /* Hinting high res */
         crossOrigin="anonymous" 
         className="w-full h-full max-w-full max-h-full object-contain bg-black"
+        style={{ aspectRatio: 'unset' }}
       />
     </div>
   );
