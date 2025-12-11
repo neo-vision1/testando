@@ -14,7 +14,8 @@
     "react-dom": "^18.3.1",
     "lucide-react": "^0.344.0",
     "@tensorflow/tfjs": "^4.17.0",
-    "@tensorflow-models/coco-ssd": "^2.2.3"
+    "@tensorflow-models/coco-ssd": "^2.2.3",
+    "@supabase/supabase-js": "^2.39.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
