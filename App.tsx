@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { StoredUser, ViewMode, AllConfigs } from './types';
 import { CONFIGURABLE_DRONES, ADDITIONAL_DRONES } from './constants';
-import { loadUser, saveUser, clearUser, loadConfig, saveConfig } from './services/storage';
+import { loadSession, clearSession, loadUserConfig, saveUserConfig } from './services/storage';
 import Login from './components/Login';
 import DronePlayer from './components/DronePlayer';
 import ConfigForm from './components/ConfigForm';
@@ -16,35 +16,43 @@ export default function App() {
   });
   const [expandedConfig, setExpandedConfig] = useState<string | null>('drone1');
 
-  // Load initial data
+  // Load initial session and user config
   useEffect(() => {
-    setUser(loadUser());
-    setConfig(loadConfig());
+    const sessionUser = loadSession();
+    if (sessionUser) {
+      setUser(sessionUser);
+      // Carrega a configuração específica deste usuário
+      const userConfig = loadUserConfig(sessionUser.id);
+      setConfig(userConfig);
+    }
   }, []);
 
-  const handleLogin = (username: string) => {
-    const uniqueId = `OP-${Math.floor(Math.random() * 9000) + 1000}`;
-    const newUser = { name: username, id: uniqueId };
-    setUser(newUser);
-    saveUser(newUser);
+  const handleLoginSuccess = (loggedInUser: StoredUser) => {
+    setUser(loggedInUser);
+    // Ao logar, carregar imediatamente a config do usuário
+    const userConfig = loadUserConfig(loggedInUser.id);
+    setConfig(userConfig);
   };
 
   const handleLogout = () => {
     setUser(null);
-    clearUser();
+    clearSession();
   };
 
   const handleSaveConfig = useCallback((key: keyof AllConfigs, playbackId: string, rtmpKey: string) => {
+    if (!user) return;
+
     setConfig(prev => {
       const updated = {
         ...prev,
         [key]: { playbackId: playbackId.trim(), rtmpKey: rtmpKey.trim() }
       };
-      saveConfig(updated);
+      // Salva no "banco de dados" do usuário específico
+      saveUserConfig(user.id, updated);
       return updated;
     });
     setExpandedConfig(null);
-  }, []);
+  }, [user]);
 
   // Compute active feeds
   const feedsToDisplay = useMemo(() => {
@@ -66,7 +74,7 @@ export default function App() {
   }, [viewMode, config]);
 
   // Auth Guard
-  if (!user) return <Login onLogin={handleLogin} />;
+  if (!user) return <Login onLoginSuccess={handleLoginSuccess} />;
 
   return (
     // h-[100dvh] é melhor para mobile pois ignora barra de endereços dinâmicas
