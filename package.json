@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@mux/mux-player": "^2.9.1",
-    "onnxruntime-web": "^1.23.2",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "lucide-react": "^0.344.0",
+    "@tensorflow/tfjs": "^4.17.0",
+    "@tensorflow-models/coco-ssd": "^2.2.3"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
