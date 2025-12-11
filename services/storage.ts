@@ -4,10 +4,12 @@ import {
   DEFAULT_PLAYBACK_ID_1, 
   DEFAULT_RTMP_KEY_1, 
   DEFAULT_PLAYBACK_ID_2, 
-  DEFAULT_RTMP_KEY_2 
+  DEFAULT_RTMP_KEY_2,
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
 } from '../constants';
 
-const SESSION_KEY = 'drone_session_v2'; // Bump version
+const SESSION_KEY = 'drone_session_v2'; 
 const CLOUD_CONFIG_KEY = 'drone_supabase_config_v1';
 
 // Configuração Padrão Inicial
@@ -22,6 +24,15 @@ const INITIAL_CONFIG: AllConfigs = {
 let supabaseInstance: SupabaseClient | null = null;
 
 export const getCloudConfig = (): CloudConfig | null => {
+  // 1. Prioridade: Chaves Hardcoded (constants.ts)
+  if (SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_URL.length > 5) {
+    return {
+      supabaseUrl: SUPABASE_URL,
+      supabaseKey: SUPABASE_ANON_KEY
+    };
+  }
+
+  // 2. Fallback: LocalStorage (Configuração Manual)
   if (typeof window === 'undefined') return null;
   const data = localStorage.getItem(CLOUD_CONFIG_KEY);
   return data ? JSON.parse(data) : null;
@@ -38,7 +49,7 @@ const getSupabase = (): SupabaseClient => {
 
   const config = getCloudConfig();
   if (!config || !config.supabaseUrl || !config.supabaseKey) {
-    throw new Error("Supabase não configurado. Clique em 'Configurar Nuvem'.");
+    throw new Error("Supabase não configurado. Verifique o arquivo constants.ts ou configure manualmente.");
   }
 
   try {
@@ -57,16 +68,10 @@ export const forceSync = async (): Promise<{ success: boolean; message: string }
     // Tenta uma query leve para verificar a chave
     const { error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });
     
-    // Se a tabela não existir ou RLS bloquear, pode dar erro, mas valida a conexão http
-    // Erro 401/403 indica chave ruim. Erro 404 indica url ruim.
-    
-    if (error && error.code !== 'PGRST116') { // Ignora erro de 'no rows' se for o caso
-        // Se for erro de permissão (que é esperado se não estiver logado), ainda assim a conexão funcionou
+    if (error && error.code !== 'PGRST116') { 
         if (error.code === '42501' || error.message.includes('fetch')) {
-             // 42501 é row level security violation (bom sinal, significa que conectou no banco)
              return { success: true, message: "Conectado ao Supabase!" };
         }
-        // Retornar sucesso se for apenas questão de auth, pois o login virá depois
         return { success: true, message: "Conexão estabelecida." };
     }
 
@@ -90,6 +95,11 @@ export const registerUser = async (email: string, password: string): Promise<Sto
   if (authError) throw new Error(authError.message);
   if (!authData.user) throw new Error("Erro ao criar usuário.");
 
+  // Se o Supabase exigir confirmação de email, a sessão virá nula
+  if (!authData.session && authData.user.identities?.length) {
+    throw new Error("Registro realizado! Verifique seu email para confirmar a conta antes de entrar.");
+  }
+
   const userId = authData.user.id;
 
   // 2. Criar Perfil na Tabela (Profile)
@@ -100,9 +110,7 @@ export const registerUser = async (email: string, password: string): Promise<Sto
     ]);
 
   if (profileError) {
-    // Se falhar o perfil, tentamos limpar o auth (opcional, mas boa prática)
     console.error("Erro ao criar perfil:", profileError);
-    // Mas não paramos o fluxo, pois o usuário pode logar e o perfil ser criado depois
   }
 
   return { id: userId, name: email };
@@ -116,7 +124,17 @@ export const loginUser = async (email: string, password: string): Promise<Stored
     password,
   });
 
-  if (error) throw new Error("Email ou senha incorretos.");
+  if (error) {
+    console.error("Login Error:", error);
+    if (error.message.includes("Email not confirmed")) {
+      throw new Error("Email não confirmado. Verifique sua caixa de entrada (ou spam).");
+    }
+    if (error.message.includes("Invalid login credentials")) {
+      throw new Error("Email ou senha incorretos.");
+    }
+    throw new Error(error.message || "Erro ao fazer login.");
+  }
+  
   if (!data.user) throw new Error("Usuário não encontrado.");
 
   return { id: data.user.id, name: data.user.email || email };
@@ -164,10 +182,9 @@ export const saveUserConfig = async (userId: string, config: AllConfigs): Promis
 
   if (error) {
     console.error("Erro ao salvar config:", error);
-    // Fallback: Se não existe (ex: usuário antigo), tenta criar
     const { error: insertError } = await supabase
         .from('profiles')
-        .upsert({ id: userId, config: config }); // Upsert requer email se for not null, mas nossa tabela simplificada pode não exigir
+        .upsert({ id: userId, config: config }); 
     
     if (insertError) console.error("Erro ao tentar upsert:", insertError);
   }
@@ -187,10 +204,8 @@ export const loadUserConfig = async (userId: string): Promise<AllConfigs> => {
     return INITIAL_CONFIG;
   }
 
-  // Merge com inicial para garantir que novos campos não quebrem
   return { ...INITIAL_CONFIG, ...(data.config as object) };
 };
 
-// Compatibilidade
 export const loadConfig = (): AllConfigs => INITIAL_CONFIG; 
 export const saveConfig = (c: AllConfigs) => {};

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { registerUser, loginUser, saveSession, getCloudConfig, saveCloudConfig, forceSync } from '../services/storage';
 import { StoredUser } from '../types';
-import { Database, Check, AlertCircle, Loader2, KeyRound } from 'lucide-react';
+import { Database, Check, AlertCircle, Loader2, KeyRound, Lock } from 'lucide-react';
+import { SUPABASE_URL } from '../constants';
 
 interface LoginProps {
   onLoginSuccess: (user: StoredUser) => void;
@@ -23,16 +24,19 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Check if configuration is hardcoded
+  const isHardcoded = !!(SUPABASE_URL && SUPABASE_URL.length > 5);
+
   useEffect(() => {
     const cloud = getCloudConfig();
     if (cloud?.supabaseUrl) {
       setSupabaseUrl(cloud.supabaseUrl);
       setSupabaseKey(cloud.supabaseKey);
-    } else {
-        // Se não tiver config, mostra a tela de config primeiro
+    } else if (!isHardcoded) {
+        // Apenas mostra a config inicial se não estiver hardcoded e não tiver local storage
         setShowCloudConfig(true);
     }
-  }, []);
+  }, [isHardcoded]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,13 +76,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setSuccessMsg(null);
 
     try {
-        // 1. Salvar configuração
         saveCloudConfig({
             supabaseUrl: supabaseUrl.trim(),
             supabaseKey: supabaseKey.trim(),
         });
 
-        // 2. Forçar teste
         const result = await forceSync();
 
         if (result.success) {
@@ -104,7 +106,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
 
   // Render Cloud Config Screen
-  if (showCloudConfig) {
+  if (showCloudConfig && !isHardcoded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black p-4">
         <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6">
@@ -253,14 +255,21 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         </form>
         
         <div className="mt-4 flex flex-col gap-3">
-          <button 
-            type="button"
-            onClick={() => setShowCloudConfig(true)}
-            className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 border border-slate-700"
-          >
-            <Database className="w-4 h-4" />
-            {supabaseUrl ? 'Supabase Conectado (Editar)' : 'Configurar Banco de Dados'}
-          </button>
+          {isHardcoded ? (
+             <div className="w-full py-2 px-4 bg-slate-900/80 text-slate-500 text-xs font-mono rounded-lg border border-slate-800 text-center flex items-center justify-center gap-2 select-none">
+                <Lock className="w-3 h-3" />
+                Conexão: Definida no Sistema (Global)
+             </div>
+          ) : (
+            <button 
+                type="button"
+                onClick={() => setShowCloudConfig(true)}
+                className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 border border-slate-700"
+            >
+                <Database className="w-4 h-4" />
+                {supabaseUrl ? 'Supabase Conectado (Editar)' : 'Configurar Banco de Dados'}
+            </button>
+          )}
 
           <div className="pt-2 border-t border-slate-800 text-center">
             <button 
