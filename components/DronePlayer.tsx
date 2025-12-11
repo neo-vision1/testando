@@ -214,10 +214,15 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
         autoplay
         muted
         plays-inline
-        max-resolution="1080p" /* Hinting high res */
+        max-resolution="1080p" 
         crossOrigin="anonymous" 
         className="w-full h-full max-w-full max-h-full object-contain bg-black"
-        style={{ aspectRatio: 'unset' }}
+        style={{ 
+            aspectRatio: 'unset',
+            '--media-range-track-height': '4px',
+            '--media-range-thumb-width': '12px',
+            '--media-range-thumb-height': '12px',
+        } as React.CSSProperties}
       />
     </div>
   );

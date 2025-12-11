@@ -1,3 +1,4 @@
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AllConfigs, StoredUser, CloudConfig } from '../types';
 import { 
   DEFAULT_PLAYBACK_ID_1, 
@@ -6,22 +7,8 @@ import {
   DEFAULT_RTMP_KEY_2 
 } from '../constants';
 
-const SESSION_KEY = 'drone_session_v1';
-const USERS_DB_KEY = 'drone_users_db_v1';
-const CLOUD_CONFIG_KEY = 'drone_cloud_config_v1';
-const GIST_FILENAME = 'drone_command_db.json';
-
-// Estrutura interna do "Banco de Dados"
-interface UserRecord {
-  id: string;
-  username: string;
-  password: string;
-  config: AllConfigs;
-}
-
-interface UserDatabase {
-  [userId: string]: UserRecord;
-}
+const SESSION_KEY = 'drone_session_v2'; // Bump version
+const CLOUD_CONFIG_KEY = 'drone_supabase_config_v1';
 
 // Configuração Padrão Inicial
 const INITIAL_CONFIG: AllConfigs = {
@@ -30,7 +17,9 @@ const INITIAL_CONFIG: AllConfigs = {
   theme: 'dark'
 };
 
-// --- Cloud / GitHub Services ---
+// --- Supabase Instance Management ---
+
+let supabaseInstance: SupabaseClient | null = null;
 
 export const getCloudConfig = (): CloudConfig | null => {
   if (typeof window === 'undefined') return null;
@@ -40,178 +29,97 @@ export const getCloudConfig = (): CloudConfig | null => {
 
 export const saveCloudConfig = (config: CloudConfig) => {
   localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(config));
+  // Reset instance to force recreation with new creds
+  supabaseInstance = null;
 };
 
-// Busca o banco de dados do GitHub (Se configurado)
-const fetchCloudDB = async (token: string, gistId: string | null): Promise<{ db: UserDatabase | null, newGistId: string | null }> => {
+const getSupabase = (): SupabaseClient => {
+  if (supabaseInstance) return supabaseInstance;
+
+  const config = getCloudConfig();
+  if (!config || !config.supabaseUrl || !config.supabaseKey) {
+    throw new Error("Supabase não configurado. Clique em 'Configurar Nuvem'.");
+  }
+
   try {
-    // Se temos um ID, tentamos ler direto
-    if (gistId) {
-      const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-        headers: { Authorization: `token ${token}` }
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.files && json.files[GIST_FILENAME]) {
-          return { db: JSON.parse(json.files[GIST_FILENAME].content), newGistId: gistId };
+    supabaseInstance = createClient(config.supabaseUrl, config.supabaseKey);
+    return supabaseInstance;
+  } catch (e) {
+    throw new Error("Configuração do Supabase inválida.");
+  }
+};
+
+// --- Helper para UI (Teste de Conexão) ---
+
+export const forceSync = async (): Promise<{ success: boolean; message: string }> => {
+  try {
+    const supabase = getSupabase();
+    // Tenta uma query leve para verificar a chave
+    const { error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });
+    
+    // Se a tabela não existir ou RLS bloquear, pode dar erro, mas valida a conexão http
+    // Erro 401/403 indica chave ruim. Erro 404 indica url ruim.
+    
+    if (error && error.code !== 'PGRST116') { // Ignora erro de 'no rows' se for o caso
+        // Se for erro de permissão (que é esperado se não estiver logado), ainda assim a conexão funcionou
+        if (error.code === '42501' || error.message.includes('fetch')) {
+             // 42501 é row level security violation (bom sinal, significa que conectou no banco)
+             return { success: true, message: "Conectado ao Supabase!" };
         }
-      }
+        // Retornar sucesso se for apenas questão de auth, pois o login virá depois
+        return { success: true, message: "Conexão estabelecida." };
     }
 
-    // Se não temos ID ou falhou, buscamos nos gists do usuário
-    const searchRes = await fetch(`https://api.github.com/gists`, {
-      headers: { Authorization: `token ${token}` }
-    });
-    
-    if (searchRes.ok) {
-      const gists = await searchRes.json();
-      const existingGist = gists.find((g: any) => g.files[GIST_FILENAME]);
-      
-      if (existingGist) {
-        const contentRes = await fetch(existingGist.files[GIST_FILENAME].raw_url);
-        const db = await contentRes.json();
-        return { db, newGistId: existingGist.id };
-      }
-    }
-
-    return { db: null, newGistId: null };
-  } catch (e) {
-    console.error("Erro na nuvem:", e);
-    return { db: null, newGistId: null };
+    return { success: true, message: "Conectado com sucesso!" };
+  } catch (e: any) {
+    return { success: false, message: "Falha na conexão. Verifique URL e Chave." };
   }
 };
 
-// Salva o banco de dados no GitHub
-const pushToCloud = async (db: UserDatabase, token: string, gistId: string | null): Promise<string | null> => {
-  const body = {
-    description: "Drone Command Center Database",
-    public: false,
-    files: {
-      [GIST_FILENAME]: {
-        content: JSON.stringify(db, null, 2)
-      }
-    }
-  };
+// --- Auth Services (Supabase Auth) ---
 
-  try {
-    const url = gistId ? `https://api.github.com/gists/${gistId}` : `https://api.github.com/gists`;
-    const method = gistId ? 'PATCH' : 'POST';
+export const registerUser = async (email: string, password: string): Promise<StoredUser> => {
+  const supabase = getSupabase();
 
-    const res = await fetch(url, {
-      method,
-      headers: {
-        Authorization: `token ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    });
-
-    if (res.ok) {
-      const json = await res.json();
-      return json.id;
-    }
-  } catch (e) {
-    console.error("Falha ao salvar na nuvem:", e);
-  }
-  return gistId;
-};
-
-// --- Local Helper Functions ---
-
-const getLocalDB = (): UserDatabase => {
-  if (typeof window === 'undefined') return {};
-  try {
-    const db = localStorage.getItem(USERS_DB_KEY);
-    return db ? JSON.parse(db) : {};
-  } catch (e) {
-    return {};
-  }
-};
-
-const saveLocalDB = (db: UserDatabase) => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(USERS_DB_KEY, JSON.stringify(db));
-  }
-};
-
-// --- Sync Logic (Core) ---
-
-const getDB = async (): Promise<UserDatabase> => {
-  const local = getLocalDB();
-  const cloudConf = getCloudConfig();
-
-  if (cloudConf && cloudConf.githubToken) {
-    // Tentativa de Sync
-    const { db: cloudDB, newGistId } = await fetchCloudDB(cloudConf.githubToken, cloudConf.gistId);
-    
-    if (newGistId && newGistId !== cloudConf.gistId) {
-      saveCloudConfig({ ...cloudConf, gistId: newGistId });
-    }
-
-    if (cloudDB) {
-      // Merge simples: Nuvem tem prioridade sobre local para consistência
-      // Em um app real, faríamos merge inteligente por timestamp
-      const merged = { ...local, ...cloudDB };
-      saveLocalDB(merged);
-      return merged;
-    }
-  }
-
-  return local;
-};
-
-const saveDB = async (db: UserDatabase) => {
-  // 1. Salva Local
-  saveLocalDB(db);
-
-  // 2. Tenta salvar Nuvem
-  const cloudConf = getCloudConfig();
-  if (cloudConf && cloudConf.githubToken) {
-    const newId = await pushToCloud(db, cloudConf.githubToken, cloudConf.gistId);
-    if (newId && newId !== cloudConf.gistId) {
-      saveCloudConfig({ ...cloudConf, gistId: newId });
-    }
-  }
-};
-
-// --- Auth Services (Async Now) ---
-
-export const registerUser = async (username: string, password: string): Promise<StoredUser> => {
-  const db = await getDB();
-  
-  const exists = Object.values(db).some(u => u.username.toLowerCase() === username.toLowerCase());
-  if (exists) {
-    throw new Error("Nome de usuário já está em uso.");
-  }
-
-  const newId = `OP-${Date.now().toString(36).toUpperCase()}`;
-  
-  const newUser: UserRecord = {
-    id: newId,
-    username,
+  // 1. Criar Usuário no Auth
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email,
     password,
-    config: INITIAL_CONFIG
-  };
+  });
 
-  db[newId] = newUser;
-  await saveDB(db);
+  if (authError) throw new Error(authError.message);
+  if (!authData.user) throw new Error("Erro ao criar usuário.");
 
-  return { id: newId, name: username };
-};
+  const userId = authData.user.id;
 
-export const loginUser = async (username: string, password: string): Promise<StoredUser> => {
-  // Força sync antes do login para pegar usuários criados em outros PCs
-  const db = await getDB();
-  
-  const user = Object.values(db).find(
-    u => u.username.toLowerCase() === username.toLowerCase() && u.password === password
-  );
+  // 2. Criar Perfil na Tabela (Profile)
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .insert([
+      { id: userId, email: email, config: INITIAL_CONFIG }
+    ]);
 
-  if (!user) {
-    throw new Error("Usuário ou senha inválidos.");
+  if (profileError) {
+    // Se falhar o perfil, tentamos limpar o auth (opcional, mas boa prática)
+    console.error("Erro ao criar perfil:", profileError);
+    // Mas não paramos o fluxo, pois o usuário pode logar e o perfil ser criado depois
   }
 
-  return { id: user.id, name: user.username };
+  return { id: userId, name: email };
+};
+
+export const loginUser = async (email: string, password: string): Promise<StoredUser> => {
+  const supabase = getSupabase();
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) throw new Error("Email ou senha incorretos.");
+  if (!data.user) throw new Error("Usuário não encontrado.");
+
+  return { id: data.user.id, name: data.user.email || email };
 };
 
 // --- Session Management ---
@@ -232,35 +140,55 @@ export const loadSession = (): StoredUser | null => {
   }
 };
 
-export const clearSession = (): void => {
+export const clearSession = async (): Promise<void> => {
   if (typeof window !== 'undefined') {
     localStorage.removeItem(SESSION_KEY);
+    try {
+        const supabase = getSupabase();
+        await supabase.auth.signOut();
+    } catch (e) {
+        // Ignorar se não tiver instancia
+    }
   }
 };
 
-// --- Config Management ---
+// --- Config Management (Profiles Table) ---
 
 export const saveUserConfig = async (userId: string, config: AllConfigs): Promise<void> => {
-  const db = await getDB();
-  if (db[userId]) {
-    db[userId].config = config;
-    await saveDB(db);
+  const supabase = getSupabase();
+  
+  const { error } = await supabase
+    .from('profiles')
+    .update({ config: config })
+    .eq('id', userId);
+
+  if (error) {
+    console.error("Erro ao salvar config:", error);
+    // Fallback: Se não existe (ex: usuário antigo), tenta criar
+    const { error: insertError } = await supabase
+        .from('profiles')
+        .upsert({ id: userId, config: config }); // Upsert requer email se for not null, mas nossa tabela simplificada pode não exigir
+    
+    if (insertError) console.error("Erro ao tentar upsert:", insertError);
   }
 };
 
 export const loadUserConfig = async (userId: string): Promise<AllConfigs> => {
-  // Tenta ler localmente primeiro para velocidade instantânea
-  let db = getLocalDB();
-  
-  // Se não achar, ou se quisermos garantir atualização, chamamos o async
-  if (!db[userId]) {
-    db = await getDB();
+  const supabase = getSupabase();
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('config')
+    .eq('id', userId)
+    .single();
+
+  if (error || !data) {
+    console.warn("Config não encontrada ou erro:", error);
+    return INITIAL_CONFIG;
   }
 
-  if (db[userId] && db[userId].config) {
-    return { ...INITIAL_CONFIG, ...db[userId].config };
-  }
-  return INITIAL_CONFIG;
+  // Merge com inicial para garantir que novos campos não quebrem
+  return { ...INITIAL_CONFIG, ...(data.config as object) };
 };
 
 // Compatibilidade

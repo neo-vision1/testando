@@ -10,14 +10,13 @@ export interface AllConfigs {
 }
 
 export interface StoredUser {
-  name: string;
+  name: string; // Será o email no caso do Supabase
   id: string;
 }
 
 export interface CloudConfig {
-  githubToken: string;
-  gistId: string | null;
-  lastSync: number;
+  supabaseUrl: string;
+  supabaseKey: string;
 }
 
 export type ViewMode = 'alpha' | 'bravo' | 'multi';
