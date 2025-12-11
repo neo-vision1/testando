@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ScanEye, Loader2, AlertTriangle, Hd } from 'lucide-react';
+import { ScanEye, Loader2, AlertTriangle, Monitor } from 'lucide-react';
 
 // Import TensorFlow.js and the pre-trained model
 import '@tensorflow/tfjs';
@@ -160,7 +160,7 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
 
             {/* Quality Indicator */}
             <div className="bg-blue-900/60 backdrop-blur-sm text-blue-200 px-2 py-1 rounded text-[10px] font-mono border border-blue-800/50 flex items-center gap-1 shadow-sm">
-                <Hd className="w-3 h-3" />
+                <Monitor className="w-3 h-3" />
                 <span className="font-bold">1080p</span>
             </div>
         </div>
