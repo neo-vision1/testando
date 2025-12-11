@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ScanEye, Loader2, AlertTriangle, Monitor } from 'lucide-react';
+import { ScanEye, Loader2, AlertTriangle, Monitor, History } from 'lucide-react';
 
 // Import TensorFlow.js and the pre-trained model
 import '@tensorflow/tfjs';
@@ -147,7 +147,7 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
       />
 
       {/* Overlay Info Superior */}
-      <div className="absolute top-2 left-2 z-30 flex flex-col gap-1 max-w-[80%]">
+      <div className="absolute top-2 left-2 z-30 flex flex-col gap-1 max-w-[80%] pointer-events-none">
         <div className="flex items-center gap-2">
             <div className="bg-black/60 backdrop-blur-sm text-green-400 px-2 py-1 rounded text-[10px] font-mono border border-green-900/50 flex items-center gap-2 shadow-sm whitespace-nowrap overflow-hidden text-ellipsis">
             <span className="relative flex h-2 w-2 min-w-[8px]">
@@ -155,13 +155,18 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
             </span>
             <span className="hidden sm:inline">LIVE DVR |</span>
-            <span className="text-slate-300">{playbackId.substring(0, 8)}...</span>
+            <span className="text-slate-300">{playbackId ? playbackId.substring(0, 8) : 'N/A'}...</span>
             </div>
 
             {/* Quality Indicator */}
             <div className="bg-blue-900/60 backdrop-blur-sm text-blue-200 px-2 py-1 rounded text-[10px] font-mono border border-blue-800/50 flex items-center gap-1 shadow-sm">
                 <Monitor className="w-3 h-3" />
                 <span className="font-bold">1080p</span>
+            </div>
+            
+            <div className="hidden sm:flex bg-slate-800/60 backdrop-blur-sm text-slate-300 px-2 py-1 rounded text-[10px] font-mono border border-slate-700/50 items-center gap-1 shadow-sm">
+                <History className="w-3 h-3" />
+                <span>DVR ATIVO</span>
             </div>
         </div>
 
@@ -180,7 +185,7 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
         className={`
           absolute top-2 right-2 z-30 px-3 py-2 sm:py-1 rounded text-xs font-bold font-mono
           flex items-center gap-2 transition-all duration-200 border shadow-lg backdrop-blur-md
-          active:scale-95 touch-manipulation
+          active:scale-95 touch-manipulation cursor-pointer
           ${isAiActive 
             ? 'bg-red-600/20 text-red-400 border-red-500 hover:bg-red-600/30' 
             : 'bg-slate-800/60 text-slate-300 border-slate-600 hover:bg-slate-700/80 hover:text-white'}
@@ -208,10 +213,10 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
         ref={muxPlayerRef}
         playback-id={playbackId}
         stream-type="live:dvr"
-        primary-color="#3b82f6"
+        primary-color="#ef4444" 
         secondary-color="#1e293b"
         controls
-        autoplay
+        autoplay="muted"
         muted
         plays-inline
         max-resolution="1080p" 
@@ -219,9 +224,15 @@ const DronePlayer: React.FC<DronePlayerProps> = ({ playbackId, droneName }) => {
         className="w-full h-full max-w-full max-h-full object-contain bg-black"
         style={{ 
             aspectRatio: 'unset',
-            '--media-range-track-height': '4px',
-            '--media-range-thumb-width': '12px',
-            '--media-range-thumb-height': '12px',
+            '--media-range-track-height': '8px', /* Mais grosso para visibilidade */
+            '--media-range-track-border-radius': '4px',
+            '--media-range-thumb-width': '16px',
+            '--media-range-thumb-height': '16px',
+            '--media-range-thumb-background': '#ef4444', /* Vermelho estilo YouTube */
+            '--media-range-track-background': 'rgba(255, 255, 255, 0.2)',
+            '--media-control-bar-height': '60px', /* Barra de controle maior */
+            '--media-time-text-color': '#ffffff',
+            '--media-icon-color': '#ffffff',
         } as React.CSSProperties}
       />
     </div>

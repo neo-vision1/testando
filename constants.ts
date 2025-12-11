@@ -9,11 +9,11 @@ export const SUPABASE_ANON_KEY: string = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e
 
 // --- CONFIGURAÇÃO DE DRONES ---
 
-export const DEFAULT_PLAYBACK_ID_1 = 'kP5C71e800M2H35Hn7l77457Xy44600102Ld0234'; 
+export const DEFAULT_PLAYBACK_ID_1 = 'W72UFolv01VI00hiyh004TLbxVO300Osr300901Kp84HXGfBE'; 
 export const DEFAULT_RTMP_KEY_1 = '8e2849be-3829-8a6b-2bc4-bce86a83bf62';
 
-export const DEFAULT_PLAYBACK_ID_2 = 'kP5C71e800M2H35Hn7l77457Xy44600102Ld0235'; 
-export const DEFAULT_RTMP_KEY_2 = '8e2849be-3829-8a6b-2bc4-bce86a83bf63';
+export const DEFAULT_PLAYBACK_ID_2 = 'Z8lGAPsbj021RFH5UCdVAdSlhRwmqRjRHX1hbaGJJ802g'; 
+export const DEFAULT_RTMP_KEY_2 = 'dde664a5-b40d-6688-f962-4cac8353fae9';
 
 export const RTMP_BASE_URL = 'rtmp://global-live.mux.com:5222/app/';
 

@@ -204,7 +204,28 @@ export const loadUserConfig = async (userId: string): Promise<AllConfigs> => {
     return INITIAL_CONFIG;
   }
 
-  return { ...INITIAL_CONFIG, ...(data.config as object) };
+  // Merge com inicial para garantir que novos campos não quebrem
+  const loadedConfig = { ...INITIAL_CONFIG, ...(data.config as object) } as AllConfigs;
+
+  // OVERRIDE: Forçar o uso das chaves hardcoded se elas existirem no constants.ts
+  // Isso garante que o site sempre use as chaves fixas definidas no código, 
+  // ignorando valores antigos ou errados que possam estar salvos no banco de dados.
+  
+  if (DEFAULT_PLAYBACK_ID_1 && DEFAULT_PLAYBACK_ID_1.length > 5) {
+      loadedConfig.drone1.playbackId = DEFAULT_PLAYBACK_ID_1;
+  }
+  if (DEFAULT_RTMP_KEY_1 && DEFAULT_RTMP_KEY_1.length > 5) {
+      loadedConfig.drone1.rtmpKey = DEFAULT_RTMP_KEY_1;
+  }
+  
+  if (DEFAULT_PLAYBACK_ID_2 && DEFAULT_PLAYBACK_ID_2.length > 5) {
+      loadedConfig.drone2.playbackId = DEFAULT_PLAYBACK_ID_2;
+  }
+  if (DEFAULT_RTMP_KEY_2 && DEFAULT_RTMP_KEY_2.length > 5) {
+      loadedConfig.drone2.rtmpKey = DEFAULT_RTMP_KEY_2;
+  }
+
+  return loadedConfig;
 };
 
 export const loadConfig = (): AllConfigs => INITIAL_CONFIG; 
