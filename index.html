@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Drone Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+      }
+    </script>
     <!-- Mux Player Web Component -->
     <script src="https://unpkg.com/@mux/mux-player"></script>
     <style>
@@ -16,10 +21,24 @@
       ::-webkit-scrollbar-track {
         background: #0f172a; 
       }
+      .dark ::-webkit-scrollbar-track {
+        background: #0f172a;
+      }
+      :not(.dark) ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+
       ::-webkit-scrollbar-thumb {
         background: #334155; 
         border-radius: 4px;
       }
+      .dark ::-webkit-scrollbar-thumb {
+        background: #334155;
+      }
+      :not(.dark) ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+      }
+      
       ::-webkit-scrollbar-thumb:hover {
         background: #475569; 
       }
@@ -39,7 +58,7 @@
 }
 </script>
 </head>
-  <body class="bg-slate-950 text-slate-200 antialiased selection:bg-blue-500 selection:text-white">
+  <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-200 antialiased selection:bg-blue-500 selection:text-white transition-colors duration-300">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

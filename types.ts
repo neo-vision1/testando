@@ -6,6 +6,7 @@ export interface SingleDroneConfig {
 export interface AllConfigs {
   drone1: SingleDroneConfig;
   drone2: SingleDroneConfig;
+  theme: 'light' | 'dark';
 }
 
 export interface StoredUser {

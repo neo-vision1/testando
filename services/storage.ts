@@ -25,6 +25,7 @@ interface UserDatabase {
 const INITIAL_CONFIG: AllConfigs = {
   drone1: { playbackId: DEFAULT_PLAYBACK_ID_1, rtmpKey: DEFAULT_RTMP_KEY_1 },
   drone2: { playbackId: DEFAULT_PLAYBACK_ID_2, rtmpKey: DEFAULT_RTMP_KEY_2 },
+  theme: 'dark' // Default theme
 };
 
 // --- Helper Functions ---
@@ -79,7 +80,7 @@ export const loginUser = (username: string, password: string): StoredUser => {
   );
 
   if (!user) {
-    throw new Error("Usuário ou senha inválidos.");
+    throw new Error("Usuário ou senha inválidos. (Nota: Dados são salvos apenas neste dispositivo)");
   }
 
   return { id: user.id, name: user.username };
@@ -122,11 +123,12 @@ export const saveUserConfig = (userId: string, config: AllConfigs): void => {
 export const loadUserConfig = (userId: string): AllConfigs => {
   const db = getDB();
   if (db[userId] && db[userId].config) {
-    return db[userId].config;
+    // Merge com INITIAL_CONFIG para garantir que novas props (como theme) existam em usuários antigos
+    return { ...INITIAL_CONFIG, ...db[userId].config };
   }
   return INITIAL_CONFIG;
 };
 
 // Mantemos compatibilidade com assinaturas antigas se necessário, mas o App deve usar as novas
 export const loadConfig = (): AllConfigs => INITIAL_CONFIG; 
-export const saveConfig = (c: AllConfigs) => {}; 
+export const saveConfig = (c: AllConfigs) => {};
