@@ -194,14 +194,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 shadow-[0_0_20px_rgba(220,220,220,0.5)]" style={{ backgroundColor: '#DCDCDC' }}></div>
 
         <div className="text-center mb-6">
-          {/* IMAGE PLACEHOLDER */}
-          <div className="mb-4 mx-auto w-32 h-32 rounded-lg overflow-hidden border-2 border-dashed flex items-center justify-center" style={{ borderColor: '#DCDCDC', backgroundColor: 'rgba(220,220,220,0.1)' }}>
-             <span className="text-xs text-center px-2" style={{ color: '#DCDCDC' }}>[Placeholder da Imagem]<br/>Substitua o src da img</span>
-             <img src="/sua-imagem-aqui.png" alt="Logo Cliente" className="hidden w-full h-full object-cover" />
-          </div>
-
-          <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 shadow-lg" style={{ backgroundColor: 'rgba(220, 220, 220, 0.2)' }}>
-            <Database className="h-8 w-8" style={{ color: '#DCDCDC' }} />
+          {/* LOGO IMAGE */}
+          <div className="mb-4 mx-auto w-36 h-36 rounded-xl overflow-hidden flex items-center justify-center" style={{ backgroundColor: 'rgba(220,220,220,0.08)' }}>
+             <img src="/Logo_Icon_NV.png" alt="Neo Vision Logo" className="w-full h-full object-contain p-2" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#DCDCDC' }}>
             {isRegistering ? 'Criar Conta' : 'Acesso Seguro'}
