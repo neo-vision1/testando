@@ -13,6 +13,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [showCloudConfig, setShowCloudConfig] = useState(false);
   
   // Auth Form
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
@@ -51,7 +52,8 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       let user: StoredUser;
 
       if (isRegistering) {
-        user = await registerUser(email, password);
+        if (!username.trim()) throw new Error("Preencha o nome de usuário.");
+        user = await registerUser(username, email, password);
       } else {
         user = await loginUser(email, password);
       }
@@ -186,41 +188,63 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-radial-gradient from-slate-900 to-black p-4">
-      <div className="w-full max-w-md bg-slate-900/50 backdrop-blur-md border border-slate-800 rounded-2xl shadow-2xl p-8 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 transition-colors" style={{ backgroundColor: '#1E90FF' }}>
+      <div className="w-full max-w-md backdrop-blur-md border rounded-2xl shadow-2xl p-8 relative overflow-hidden" style={{ backgroundColor: 'rgba(28, 30, 33, 0.85)', borderColor: '#DCDCDC' }}>
         
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.5)]"></div>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 shadow-[0_0_20px_rgba(220,220,220,0.5)]" style={{ backgroundColor: '#DCDCDC' }}></div>
 
         <div className="text-center mb-6">
-          <div className="mx-auto w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-green-500/30">
-            <Database className="h-8 w-8 text-white" />
+          {/* IMAGE PLACEHOLDER */}
+          <div className="mb-4 mx-auto w-32 h-32 rounded-lg overflow-hidden border-2 border-dashed flex items-center justify-center" style={{ borderColor: '#DCDCDC', backgroundColor: 'rgba(220,220,220,0.1)' }}>
+             <span className="text-xs text-center px-2" style={{ color: '#DCDCDC' }}>[Placeholder da Imagem]<br/>Substitua o src da img</span>
+             <img src="/sua-imagem-aqui.png" alt="Logo Cliente" className="hidden w-full h-full object-cover" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">
+
+          <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 shadow-lg" style={{ backgroundColor: 'rgba(220, 220, 220, 0.2)' }}>
+            <Database className="h-8 w-8" style={{ color: '#DCDCDC' }} />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#DCDCDC' }}>
             {isRegistering ? 'Criar Conta' : 'Acesso Seguro'}
           </h1>
-          <p className="text-slate-400 text-sm mt-2">Central de Comando via Supabase</p>
+          <p className="text-sm mt-2" style={{ color: 'rgba(220, 220, 220, 0.7)' }}>Central de Comando via Supabase</p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-900/30 border border-red-800/50 rounded-lg text-red-200 text-xs flex items-center gap-2">
+          <div className="mb-4 p-3 rounded-lg text-xs flex items-center gap-2" style={{ backgroundColor: 'rgba(255, 0, 0, 0.2)', border: '1px solid rgba(255, 0, 0, 0.4)', color: '#ffb3b3' }}>
             <AlertCircle className="w-4 h-4 shrink-0" />
             {error}
           </div>
         )}
 
         {successMsg && (
-          <div className="mb-4 p-3 bg-green-900/30 border border-green-800/50 rounded-lg text-green-200 text-xs flex items-center gap-2">
+          <div className="mb-4 p-3 rounded-lg text-xs flex items-center gap-2" style={{ backgroundColor: 'rgba(0, 255, 0, 0.1)', border: '1px solid rgba(0, 255, 0, 0.3)', color: '#b3ffb3' }}>
             <Check className="w-4 h-4 shrink-0" />
             {successMsg}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {isRegistering && (
+            <div>
+              <label className="block text-xs font-semibold uppercase mb-2" style={{ color: '#DCDCDC' }}>Nome de Usuário</label>
+              <input
+                type="text"
+                className="w-full px-4 py-3 bg-black/50 border rounded-lg focus:outline-none transition-all"
+                style={{ borderColor: 'rgba(220, 220, 220, 0.3)', color: '#DCDCDC' }}
+                placeholder="Ex: Comandante Silva"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={loading}
+              />
+            </div>
+          )}
+          
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase mb-2">Email</label>
+            <label className="block text-xs font-semibold uppercase mb-2" style={{ color: '#DCDCDC' }}>Email</label>
             <input
               type="email"
-              className="w-full px-4 py-3 bg-black/50 border border-slate-700 rounded-lg text-white placeholder-slate-600 focus:border-green-500 focus:outline-none transition-all"
+              className="w-full px-4 py-3 bg-black/50 border rounded-lg focus:outline-none transition-all"
+              style={{ borderColor: 'rgba(220, 220, 220, 0.3)', color: '#DCDCDC' }}
               placeholder="operador@comando.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -229,10 +253,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </div>
           
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase mb-2">Senha</label>
+            <label className="block text-xs font-semibold uppercase mb-2" style={{ color: '#DCDCDC' }}>Senha</label>
             <input
               type="password"
-              className="w-full px-4 py-3 bg-black/50 border border-slate-700 rounded-lg text-white placeholder-slate-600 focus:border-green-500 focus:outline-none transition-all"
+              className="w-full px-4 py-3 bg-black/50 border rounded-lg focus:outline-none transition-all"
+              style={{ borderColor: 'rgba(220, 220, 220, 0.3)', color: '#DCDCDC' }}
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -243,8 +268,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 px-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold rounded-lg shadow-lg shadow-green-900/30 transition-all flex items-center justify-center
-              ${loading ? 'opacity-70 cursor-wait' : ''}`}
+            className={`w-full py-3 px-4 font-bold rounded-lg shadow-lg transition-all flex items-center justify-center
+              ${loading ? 'opacity-70 cursor-wait' : 'hover:opacity-90'}`}
+            style={{ backgroundColor: '#DCDCDC', color: '#1E90FF' }}
           >
             {loading ? (
               <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin"/> Processando...</span>
@@ -256,25 +282,27 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         
         <div className="mt-4 flex flex-col gap-3">
           {isHardcoded ? (
-             <div className="w-full py-2 px-4 bg-slate-900/80 text-slate-500 text-xs font-mono rounded-lg border border-slate-800 text-center flex items-center justify-center gap-2 select-none">
+             <div className="w-full py-2 px-4 bg-black/50 text-xs font-mono rounded-lg border text-center flex items-center justify-center gap-2 select-none" style={{ borderColor: 'rgba(220, 220, 220, 0.2)', color: 'rgba(220, 220, 220, 0.6)' }}>
                 <Lock className="w-3 h-3" />
-                Conexão: Definida no Sistema (Global)
+                Conexão Segura
              </div>
           ) : (
             <button 
                 type="button"
                 onClick={() => setShowCloudConfig(true)}
-                className="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 border border-slate-700"
+                className="w-full py-2 px-4 bg-black/40 hover:bg-black/60 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 border"
+                style={{ borderColor: 'rgba(220, 220, 220, 0.3)', color: '#DCDCDC' }}
             >
                 <Database className="w-4 h-4" />
                 {supabaseUrl ? 'Supabase Conectado (Editar)' : 'Configurar Banco de Dados'}
             </button>
           )}
 
-          <div className="pt-2 border-t border-slate-800 text-center">
+          <div className="pt-2 border-t text-center" style={{ borderColor: 'rgba(220, 220, 220, 0.2)' }}>
             <button 
               onClick={toggleMode}
-              className="text-xs text-green-400 hover:text-green-300 underline underline-offset-2 transition-colors"
+              className="text-xs hover:opacity-80 underline underline-offset-2 transition-opacity"
+              style={{ color: '#DCDCDC' }}
             >
               {isRegistering 
                 ? 'Já possui conta? Fazer Login' 

@@ -83,7 +83,7 @@ export const forceSync = async (): Promise<{ success: boolean; message: string }
 
 // --- Auth Services (Supabase Auth) ---
 
-export const registerUser = async (email: string, password: string): Promise<StoredUser> => {
+export const registerUser = async (name: string, email: string, password: string): Promise<StoredUser> => {
   const supabase = getSupabase();
 
   // 1. Criar Usuário no Auth
@@ -102,18 +102,18 @@ export const registerUser = async (email: string, password: string): Promise<Sto
 
   const userId = authData.user.id;
 
-  // 2. Criar Perfil na Tabela (Profile)
+  // 2. Criar Perfil na Tabela (Profile) e guardar o Nome
   const { error: profileError } = await supabase
     .from('profiles')
     .insert([
-      { id: userId, email: email, config: INITIAL_CONFIG }
+      { id: userId, email: email, name: name, config: INITIAL_CONFIG }
     ]);
 
   if (profileError) {
     console.error("Erro ao criar perfil:", profileError);
   }
 
-  return { id: userId, name: email };
+  return { id: userId, name: name };
 };
 
 export const loginUser = async (email: string, password: string): Promise<StoredUser> => {
