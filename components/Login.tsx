@@ -4,6 +4,8 @@ import { StoredUser } from '../types';
 import { Database, Check, AlertCircle, Loader2, KeyRound, Lock } from 'lucide-react';
 import { SUPABASE_URL } from '../constants';
 
+const LOGO_SRC = 'https://xrezuunshjzefdncsvgv.supabase.co/storage/v1/object/public/Imagens-neo-vision/Logo_Icon_NV.png';
+
 interface LoginProps {
   onLoginSuccess: (user: StoredUser) => void;
 }
@@ -196,7 +198,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         <div className="text-center mb-6">
           {/* LOGO IMAGE */}
           <div className="mb-4 mx-auto w-36 h-36 rounded-xl overflow-hidden flex items-center justify-center" style={{ backgroundColor: 'rgba(220,220,220,0.08)' }}>
-             <img src="/Logo_Icon_NV.png" alt="Neo Vision Logo" className="w-full h-full object-contain p-2" />
+             <img src={LOGO_SRC} alt="Neo Vision Logo" className="w-full h-full object-contain p-2" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#DCDCDC' }}>
             {isRegistering ? 'Criar Conta' : 'Acesso Seguro'}
